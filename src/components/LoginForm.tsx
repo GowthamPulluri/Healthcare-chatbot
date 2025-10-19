@@ -30,13 +30,19 @@ export default function LoginForm() {
           setLoading(false);
           return;
         }
-        success = await signup(email, password, name, preferredLanguage);
+        // Filter allowed languages for signup
+const allowedLanguages: Array<'en' | 'hi' | 'te'> = ['en', 'hi', 'te'];
+const safeLanguage: 'en' | 'hi' | 'te' = allowedLanguages.includes(preferredLanguage as 'en' | 'hi' | 'te')
+  ? preferredLanguage as 'en' | 'hi' | 'te'
+  : 'en';
+success = await signup(email, password, name, safeLanguage);
+
       }
 
       if (!success) {
         setError(isLogin ? 'Invalid credentials' : 'Failed to create account');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);

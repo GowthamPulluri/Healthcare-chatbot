@@ -4,8 +4,15 @@ import Chat from '@/models/Chat';
 import User from '@/models/User';
 import { verifyToken, getTokenFromRequest } from '@/lib/auth';
 import { detectIntent, extractEntities } from '@/lib/nlp';
-import { translateText, detectLanguage, SupportedLanguage } from '@/lib/translation';
+import { translateText, detectLanguage } from '@/lib/translation';
 import { llmService, LLMResponse } from '@/lib/llm-service';
+
+interface ChatMessage {
+  role: string;
+  content: string;
+  timestamp?: Date;
+  language?: string;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     // Get chat history for context
     let existingChat = await Chat.findOne({ userId: user._id });
-    const chatHistory = existingChat ? existingChat.messages.slice(-10).map((msg: any) => ({
+    const chatHistory = existingChat ? existingChat.messages.slice(-10).map((msg: ChatMessage) => ({
       role: msg.role,
       content: msg.content
     })) : [];
@@ -196,3 +203,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+          

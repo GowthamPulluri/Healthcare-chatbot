@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { User, Save, Plus, X } from 'lucide-react';
 
@@ -15,7 +15,7 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
-  const { user, token } = useAuth();
+  const { token } = useAuth(); // Removed unused 'user'
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -23,11 +23,7 @@ export default function ProfilePage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const response = await fetch('/api/profile', {
         headers: {
@@ -47,7 +43,11 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const updateProfile = async () => {
     if (!profile) return;

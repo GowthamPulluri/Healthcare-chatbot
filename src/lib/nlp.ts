@@ -1,4 +1,4 @@
-import natural from 'natural';
+// import natural from 'natural';
 
 export interface IntentResult {
   intent: string;
@@ -11,7 +11,7 @@ export interface EntityExtraction {
   diseases: string[];
   medications: string[];
   bodyParts: string[];
-  entities : string[];
+  entities: string[];
 }
 
 // Medical keywords for intent classification

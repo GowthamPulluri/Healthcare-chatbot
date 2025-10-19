@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Send, AlertTriangle, CheckCircle } from 'lucide-react';
 
@@ -18,7 +18,7 @@ interface ChatResponse {
   followUp?: string;
   intent: string;
   confidence: number;
-  entities: any;
+  entities: unknown; // improved from any
   detectedLanguage: string;
 }
 
@@ -31,25 +31,18 @@ export default function ChatInterface() {
   const [emergency, setEmergency] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetchChatHistory();
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const fetchChatHistory = async () => {
+  const fetchChatHistory = useCallback(async () => {
     try {
       const response = await fetch('/api/chat', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
+
 
       if (response.ok) {
         const data = await response.json();
@@ -58,7 +51,15 @@ export default function ChatInterface() {
     } catch (error) {
       console.error('Error fetching chat history:', error);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchChatHistory();
+  }, [fetchChatHistory]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || loading) return;
@@ -87,7 +88,7 @@ export default function ChatInterface() {
 
       if (response.ok) {
         const data: ChatResponse = await response.json();
-        
+
         const assistantMessage: Message = {
           role: 'assistant',
           content: data.response,
@@ -99,22 +100,21 @@ export default function ChatInterface() {
         setSuggestions(data.suggestions || []);
         setEmergency(data.emergency);
       } else {
-        const error = await response.json();
-        const errorMessage: Message = {
+        const errorMsg: Message = {
           role: 'assistant',
           content: 'Sorry, I encountered an error. Please try again.',
           timestamp: new Date().toISOString(),
         };
-        setMessages(prev => [...prev, errorMessage]);
+        setMessages(prev => [...prev, errorMsg]);
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      const errorMessage: Message = {
+      const errorMsg: Message = {
         role: 'assistant',
         content: 'Sorry, I encountered an error. Please try again.',
         timestamp: new Date().toISOString(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setLoading(false);
     }

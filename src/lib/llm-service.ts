@@ -32,9 +32,8 @@ class LLMService {
     entities: string[],
     userDiseases: string[],
     language: SupportedLanguage,
-    chatHistory: Array<{role: string, content: string}> = []
+    chatHistory: Array<{ role: string; content: string }> = []
   ): Promise<LLMResponse> {
-    
     const systemPrompt = this.buildSystemPrompt(userDiseases, language);
     const userPrompt = this.buildUserPrompt(userMessage, intent, entities, language);
 
@@ -47,15 +46,20 @@ class LLMService {
   }
 
   private buildSystemPrompt(userDiseases: string[], language: SupportedLanguage): string {
-    const diseaseContext = userDiseases.length > 0 
-      ? `\nIMPORTANT: The user has diseases to: ${userDiseases.join(', ')}. Always consider this when providing medical advice.`
+    const diseaseContext = userDiseases.length > 0
+      ? `\nIMPORTANT: The user has diseases: ${userDiseases.join(', ')}. Always consider this when providing medical advice.`
       : '';
 
-    const languageInstruction = language === 'en' 
-      ? 'Respond in English.'
-      : language === 'hi' 
-      ? 'Respond in Hindi (हिंदी में जवाब दें).'
-      : 'Respond in Telugu (తెలుగులో జవాబు ఇవ్వండి).';
+    const languageInstructionMap: Record<SupportedLanguage, string> = {
+      en: 'Respond in English.',
+      hi: 'Respond in Hindi (हिंदी में जवाब दें).',
+      te: 'Respond in Telugu (తెలుగులో జవాబు ఇవ్వండి).',
+      ta: 'Respond in Tamil (தமிழில் பதிலளிக்கவும்).',
+      kn: 'Respond in Kannada (ಕನ್ನಡದಲ್ಲಿ ಉತ್ತರಿಸಿ).',
+      ml: 'Respond in Malayalam (മലയാളത്തിൽ മറുപടി നൽകുക).',
+    };
+
+    const languageInstruction = languageInstructionMap[language] || 'Respond in English.';
 
     return `You are a helpful healthcare assistant AI. Your role is to provide general health information and guidance while emphasizing the importance of professional medical consultation.
 
@@ -82,40 +86,48 @@ IMPORTANT: You must respond ONLY with valid JSON in the following exact format. 
   }
 
   private buildUserPrompt(
-    userMessage: string, 
-    intent: string, 
-    entities: string[], 
+    userMessage: string,
+    intent: string,
+    entities: string[],
     language: SupportedLanguage
   ): string {
+    const languageNote = {
+      en: 'User prefers English.',
+      hi: 'User prefers Hindi.',
+      te: 'User prefers Telugu.',
+      ta: 'User prefers Tamil.',
+      kn: 'User prefers Kannada.',
+      ml: 'User prefers Malayalam.',
+    }[language];
+
     return `User message: "${userMessage}"
 Detected intent: ${intent}
 Extracted entities: ${entities.join(', ')}
+${languageNote}
 
 Please provide a helpful response considering the user's query, detected intent, and extracted medical entities.`;
   }
 
-
   private async callGemini(
-    systemPrompt: string, 
-    userPrompt: string, 
-    chatHistory: Array<{role: string, content: string}>
+    systemPrompt: string,
+    userPrompt: string,
+    chatHistory: Array<{ role: string; content: string }>
   ): Promise<LLMResponse> {
     if (!this.genAI) {
       throw new Error('Gemini AI not initialized');
     }
 
-    const model = this.genAI.getGenerativeModel({ 
-      model: this.config.model || 'gemini-1.5-flash' 
+    const model = this.genAI.getGenerativeModel({
+      model: this.config.model || 'gemini-1.5-flash',
     });
 
-    // Build the conversation history for Gemini
-    const history = chatHistory.slice(-6).map(msg => ({
+    const history = chatHistory.slice(-6).map((msg) => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content }]
+      parts: [{ text: msg.content }],
     }));
 
     const chat = model.startChat({
-      history: history,
+      history,
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 1000,
@@ -123,33 +135,27 @@ Please provide a helpful response considering the user's query, detected intent,
     });
 
     const fullPrompt = `${systemPrompt}\n\nUser query: ${userPrompt}`;
-    
+
     const result = await chat.sendMessage(fullPrompt);
     const response = await result.response;
     const content = response.text();
-    
+
     return this.parseLLMResponse(content);
   }
 
   private parseLLMResponse(content: string): LLMResponse {
     try {
-      // Clean the content - remove any markdown formatting or extra text
       let cleanContent = content.trim();
-      
-      // Remove markdown code blocks if present
       if (cleanContent.startsWith('```json')) {
         cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
       } else if (cleanContent.startsWith('```')) {
         cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
       }
-      
-      // Try to extract JSON from the content if it's embedded in text
       const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         cleanContent = jsonMatch[0];
       }
-      
-      // Parse the JSON
+
       const parsed = JSON.parse(cleanContent);
       return {
         response: parsed.response || content,
@@ -161,8 +167,6 @@ Please provide a helpful response considering the user's query, detected intent,
     } catch (error) {
       console.error('JSON parsing failed:', error);
       console.error('Content was:', content);
-      
-      // If JSON parsing fails, treat the entire content as response
       return {
         response: content,
         suggestions: [],
@@ -173,7 +177,7 @@ Please provide a helpful response considering the user's query, detected intent,
   }
 
   private getFallbackResponse(language: SupportedLanguage): LLMResponse {
-    const responses = {
+    const responses: Record<SupportedLanguage, LLMResponse> = {
       en: {
         response: "I apologize, but I'm having trouble processing your request right now. Please try again or consult with a healthcare professional for immediate assistance.",
         suggestions: ["Try rephrasing your question", "Consult a healthcare professional", "Check your internet connection"],
@@ -192,9 +196,27 @@ Please provide a helpful response considering the user's query, detected intent,
         emergency: false,
         confidence: 0.1,
       },
+      ta: {
+        response: "மன்னிக்கவும், தற்போது உங்கள் கோரிக்கையை செயலாக்குவதில் சிக்கல் ஏற்படுகிறது. தயவுசெய்து மீண்டும் முயற்சிக்கவும் அல்லது உடனடி உதவிக்காக ஒரு சுகாதார நிபுணரிடம் ஆலோசிக்கவும்.",
+        suggestions: ["உங்கள் கேள்வியை மறுபடியும் எழுதுங்கள்", "மருத்துவரிடம் ஆலோசிக்கவும்", "இணைய இணைப்பை சரிபார்க்கவும்"],
+        emergency: false,
+        confidence: 0.1,
+      },
+      kn: {
+        response: "ಕ್ಷಮಿಸಿ, ನಾನು ಪ್ರಸ್ತುತ ನಿಮ್ಮ ವಿನಂತಿಯನ್ನು ಪ್ರಕ್ರಿಯೆಗೊಳಿಸಲು ತೊಂದರೆಯನ್ನು ಎದುರಿಸುತ್ತಿದ್ದೇನೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ ಅಥವಾ ತುರ್ತು ಸಹಾಯಕ್ಕಾಗಿ ಆರೋಗ್ಯ ತಜ್ಞರನ್ನು ಸಂಪರ್ಕಿಸಿ.",
+        suggestions: ["ನಿಮ್ಮ ಪ್ರಶ್ನೆಯನ್ನು ಮರುಬರೆಯಿರಿ", "ಆರೋಗ್ಯ ತಜ್ಞರನ್ನು ಸಂಪರ್ಕಿಸಿ", "ನಿಮ್ಮ ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕವನ್ನು ಪರಿಶೀಲಿಸಿ"],
+        emergency: false,
+        confidence: 0.1,
+      },
+      ml: {
+        response: "ക്ഷമിക്കണം, നിങ്ങളുടെ അഭ്യർത്ഥന ഇപ്പോൾ പ്രോസസ്സ് ചെയ്യുന്നതിൽ ബുദ്ധിമുട്ട് നേരിടുന്നു. ദയവായി വീണ്ടും ശ്രമിക്കുക അല്ലെങ്കിൽ അടിയന്തര സഹായത്തിനായി ഒരു ഹെൽത്ത് കെയർ പ്രൊഫഷണലുമായി ബന്ധപ്പെടുക.",
+        suggestions: ["നിങ്ങളുടെ ചോദ്യം പുനഃരചിക്കുക", "ഹെൽത്ത് കെയർ പ്രൊഫഷണലുമായി ബന്ധപ്പെടുക", "നിങ്ങളുടെ ഇന്റർനെറ്റ് കണക്ഷൻ പരിശോധിക്കുക"],
+        emergency: false,
+        confidence: 0.1,
+      },
     };
 
-    return responses[language as keyof typeof responses];
+    return responses[language];
   }
 }
 
@@ -202,7 +224,7 @@ Please provide a helpful response considering the user's query, detected intent,
 const config: LLMConfig = {
   provider: 'gemini',
   apiKey: "AIzaSyDMWpTqbtO91ZFtUcOyA9YkxbywpVc83w0",
-  model:  'gemini-2.5-flash-lite',
+  model: 'gemini-2.5-flash-lite',
 };
 
 export const llmService = new LLMService(config);
