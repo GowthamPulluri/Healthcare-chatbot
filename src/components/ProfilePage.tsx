@@ -153,104 +153,92 @@ export default function ProfilePage() {
           )}
 
           {/* Basic Information */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  value={profile.name}
-                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+<div>
+  <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
 
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={profile.email}
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
-                />
-              </div>
-            </div>
-          </div>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+        Full Name
+      </label>
+      <input
+        type="text"
+        id="name"
+        value={profile.name}
+        onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+        className="w-full px-3 py-2 border border-gray-300 rounded-md text-black
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      />
+    </div>
 
-          {/* Language Preference */}
-          <div>
-            <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-1">
-              Preferred Language
-            </label>
-            <select
-              id="language"
-              value={profile.preferredLanguage}
-              onChange={(e) => setProfile({ 
-                ...profile, 
-                preferredLanguage: e.target.value as 'en' | 'hi' | 'te' | 'ta' | 'kn' | 'ml' 
-              })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="en">English</option>
-              <option value="hi">Hindi</option>
-              <option value="te">Telugu</option>
-              <option value="ta">Tamil</option>
-              <option value="kn">Kannada</option>
-              <option value="ml">Malayalam</option>
-            </select>
-          </div>
+    <div>
+      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+        Email
+      </label>
+      <input
+        type="email"
+        id="email"
+        value={profile.email}
+        disabled
+        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-black"
+      />
+    </div>
+  </div>
+</div>
 
-          {/* Diseases */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Diseases</h3>
-            
-            <div className="space-y-3">
-              {/* Add new Disease */}
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={newDisease}
-                  onChange={(e) => setNewDisease(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Add a new Disease..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <button
-                  onClick={addDisease}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
+{/* Language Preference */}
+<div>
+  <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-1">
+    Preferred Language
+  </label>
+  <select
+    id="language"
+    value={profile.preferredLanguage}
+    onChange={(e) =>
+      setProfile({
+        ...profile,
+        preferredLanguage: e.target.value as 'en' | 'hi' | 'te' | 'ta' | 'kn' | 'ml',
+      })
+    }
+    className="w-full px-3 py-2 border border-gray-300 rounded-md text-black
+               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+  >
+    <option value="en">English</option>
+    <option value="hi">Hindi</option>
+    <option value="te">Telugu</option>
+    <option value="ta">Tamil</option>
+    <option value="kn">Kannada</option>
+    <option value="ml">Malayalam</option>
+  </select>
+</div>
 
-              {/* Current Diseases */}
-              <div className="space-y-2">
-                {profile.Diseases.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No Diseases recorded</p>
-                ) : (
-                  profile.Diseases.map((Disease, index) => (
-                    <div key={index} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
-                      <span className="text-sm text-gray-700">{Disease}</span>
-                      <button
-                        onClick={() => removeDisease(index)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
+{/* Diseases */}
+<div>
+  <h3 className="text-lg font-semibold text-gray-900 mb-4">Diseases</h3>
+
+  <div className="space-y-3">
+    {/* Add new Disease */}
+    <div className="flex space-x-2">
+      <input
+        type="text"
+        value={newDisease}
+        onChange={(e) => setNewDisease(e.target.value)}
+        onKeyPress={handleKeyPress}
+        placeholder="Add a new Disease..."
+        className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-black 
+                   placeholder:text-gray-500 focus:outline-none focus:ring-2 
+                   focus:ring-blue-500 focus:border-transparent"
+      />
+      <button
+        onClick={addDisease}
+        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 
+                   focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+      >
+        <Plus className="h-4 w-4" />
+      </button>
+    </div>
+  </div>
+</div>
 
           {/* Account Information */}
           <div>
